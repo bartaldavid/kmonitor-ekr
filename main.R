@@ -28,43 +28,10 @@ split_by_divider <- function(vect, num_of_columns = 1, column_prefix = "") {
 
 # applying function on columns
 
-ajker <- split_by_divider(
-  tib$Ajánlatkérő.szervezet.neve..adatfrissítés.időpontjában.,
-                          num_of_columns = 7, column_prefix = "Ajanlatkero")
 ajker_r <- split_by_divider(
   tib$Ajánlatkérő.szervezet.neve..adatfrissítés.időpontjában.)
 
 ajker_id_r <- split_by_divider(tib$Ajánlatkérő.nemzeti.azonosítószáma..adatfrissítés.időpontjában.)
-
-cpv <- split_by_divider(tib$További.CPV.kód.ok.,
-  num_of_columns = 16,
-  column_prefix = "CPV"
-)
-cpv_r <- split_by_divider(tib$További.CPV.kód.ok.)
-
-
-cpv_main <- split_by_divider(tib$Fő.CPV.kód.ok., 
-                             num_of_columns = 3, 
-                             column_prefix = "Fo_CPV")
-cpv_main_r <- split_by_divider(tib$Fő.CPV.kód.ok.)
-
-nuts <- split_by_divider(tib$Teljesítés.helye.NUTS.kód.ok., 
-                         num_of_columns = 5,
-                         column_prefix = "Telj_helye_NUTS")
-nuts_r <- split_by_divider(tib$Teljesítés.helye.NUTS.kód.ok.)
-
-ajtev_r <- split_by_divider(tib$Nyertes.ajánlattevő.neve)
-# 3 fölött csak 1600 elem
-ajtev <- split_by_divider(tib$Nyertes.ajánlattevő.neve, 
-                            num_of_columns = 4, 
-                            column_prefix = "nyertes_ajanlattevo")
-
-ajtev_postai_r <- split_by_divider(tib$Nyertes.ajánlattevő.postai.címe)
-ajtev_postai <- split_by_divider(tib$Nyertes.ajánlattevő.postai.címe,
-                                  num_of_columns = 4,
-                                  column_prefix = "nyertes_ajanlattevo_postai_cime")
-
-
 
 uniform_names_based_on_id <- function(names, ids) {
   unique_names <- list()
@@ -98,6 +65,16 @@ uniform_names_based_on_id <- function(names, ids) {
 
 sol <- uniform_names_based_on_id(names = ajker_r, ids = ajker_id_r)
 
+save(sol, file = "ajker_fixed.Rdata")
+
+sol_excel <- sol
+sol_excel <- hoist(sol_excel, n, ajanlatkero_1 = 1, ajanlatkero_2 = 2, ajanlatkero_3 = 3, ajanlatkero_4 = 4, ajanlatkero_5 = 5, ajanlatkero_6 = 6)
+sol_excel <- hoist(sol_excel, i, ajanlatkero_id_1 = 1, ajanlatkero_id_2 = 2, ajanlatkero_id_3 = 3, ajanlatkero_id_4 = 4, ajanlatkero_id_5 = 5, ajanlatkero_id_6 = 6)
+sol_excel$ajker_other <- lapply(sol_excel$n, function(x) {ifelse(is.logical(x), "", paste(x, collapse="|"))}) |> unlist()
+sol_excel$ajker_id_other <- lapply(sol_excel$i, function(x) {ifelse(is.logical(x), "", paste(x, collapse="|"))}) |> unlist()
+sol_excel <- select(sol_excel, -c( "n", "i"))
+
+write_xlsx(sol_excel, path = "ajker_fixed.xlsx")
 
 adoszam_df <- tibble(tib$Nyertes.ajánlattevő.adószáma..adóazonosító.jele.)
 print(head(adoszam_df))
@@ -143,7 +120,60 @@ adoszam_excel <- hoist(adoszam_excel, eu, ado_eu_1 = 1, ado_eu_2 = 2)
 adoszam_excel$hun_other <- lapply(adoszam_excel$hun, function(x) {ifelse(is.logical(x), "", paste(x, collapse="|"))}) |> unlist()
 adoszam_excel$eu_other <- lapply(adoszam_excel$hun, function(x) {ifelse(is.logical(x), "", paste(x, collapse="|"))}) |> unlist()
 adoszam_excel$cegj <- lapply(adoszam_excel$cegj, function(x) {ifelse(is.logical(x), "", paste(x, collapse="|"))}) |> unlist()
-# drop unneccessary cols
-
 adoszam_excel <- select(adoszam_excel, -c("hun", "split", "tib$Nyertes.ajánlattevő.adószáma..adóazonosító.jele.", "eu"))
 write_xlsx(adoszam_excel, path = "adoszam.xlsx")
+
+
+
+cpv <- split_by_divider(tib$További.CPV.kód.ok.,
+                        num_of_columns = 16,
+                        column_prefix = "CPV"
+)
+cpv_r <- split_by_divider(tib$További.CPV.kód.ok.)
+
+
+cpv_main <- split_by_divider(tib$Fő.CPV.kód.ok., 
+                             num_of_columns = 3, 
+                             column_prefix = "Fo_CPV")
+cpv_main_r <- split_by_divider(tib$Fő.CPV.kód.ok.)
+
+nuts <- split_by_divider(tib$Teljesítés.helye.NUTS.kód.ok., 
+                         num_of_columns = 5,
+                         column_prefix = "Telj_helye_NUTS")
+nuts_r <- split_by_divider(tib$Teljesítés.helye.NUTS.kód.ok.)
+
+ajtev_r <- split_by_divider(tib$Nyertes.ajánlattevő.neve)
+# 3 fölött csak 1600 elem
+ajtev <- split_by_divider(tib$Nyertes.ajánlattevő.neve, 
+                          num_of_columns = 4, 
+                          column_prefix = "nyertes_ajanlattevo")
+
+ajtev_postai_r <- split_by_divider(tib$Nyertes.ajánlattevő.postai.címe)
+ajtev_postai <- split_by_divider(tib$Nyertes.ajánlattevő.postai.címe,
+                                 num_of_columns = 4,
+                                 column_prefix = "nyertes_ajanlattevo_postai_cime")
+
+tib2 <- select(tib, -c("Ajánlatkérő.szervezet.neve..ETE.ERTE.közzétételének.időpontjában.",
+                       "Ajánlatkérő.nemzeti.azonosítószáma..ETE.ERTE.közzétételének.időpontjában.",
+                       "Ajánlatkérő.szervezet.neve..adatfrissítés.időpontjában.",
+                       "Ajánlatkérő.nemzeti.azonosítószáma..adatfrissítés.időpontjában.",
+                       "Fő.CPV.kód.ok.","További.CPV.kód.ok.","Teljesítés.helye.NUTS.kód.ok.",
+                       "Nyertes.ajánlattevő.neve",  "Nyertes.ajánlattevő.adószáma..adóazonosító.jele.", "Nyertes.ajánlattevő.postai.címe"  ))
+adoszam_df <- select(adoszam_df, -c( "split", "tib$Nyertes.ajánlattevő.adószáma..adóazonosító.jele."))
+adoszam_df <- adoszam_df |> as.tibble() |> rename("Nyertes_ajanlattevo_adoszama_eu" = "eu", 
+                                     "Nyertes_ajanlattevo_cegjegyzekszam" = "cegj", 
+                                    "Nyertes_ajanlattevo_adoszama" = "hun")
+adoszam_excel <- adoszam_excel |> rename("Nyertes_ajanlattevo_adoszama_eu_1" = "ado_eu_1", 
+                                    "Nyertes_ajanlattevo_adoszama_eu_2" = "ado_eu_2",
+                                    "Nyertes_ajanlattevo_adoszama_eu_other" = "eu_other",
+                                     "Nyertes_ajanlattevo_cegjegyzekszam" = "cegj", 
+                                    "Nyertes_ajanlattevo_adoszama_1" = "ado_hu_1",
+                                    "Nyertes_ajanlattevo_adoszama_2" = "ado_hu_2",
+                                    "Nyertes_ajanlattevo_adoszama_other" = "hun_other"
+                                    )
+final_r <- tibble(tib2, "Ajanlatkero_neve" = sol$n, "Ajanlatkero_nemzeti_azonositoja" = sol$i,
+                  adoszam_df, "Fo_CPV_kodok" = cpv_main_r, "Tovabbi_CPV_kodok" = cpv_r, 
+                  "Teljesites_helye_NUTS" = nuts_r, "Nyertes ajanlattevo" = ajtev_r, 
+                  "Nyertes_ajanlattevo_postai_cime" = ajtev_postai_r)
+final_excel <- tibble(tib2, sol_excel, adoszam_excel, cpv_main, cpv, nuts, ajtev, ajtev_postai)
+write_xlsx(final_excel, path = "export/final2.xlsx")
