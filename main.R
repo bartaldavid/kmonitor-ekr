@@ -66,7 +66,6 @@ ajtev_postai <- split_by_divider(tib$Nyertes.ajánlattevő.postai.címe,
 
 
 
-
 uniform_names_based_on_id <- function(names, ids) {
   unique_names <- list()
   solution <- data.frame(1:length(names))
@@ -100,8 +99,51 @@ uniform_names_based_on_id <- function(names, ids) {
 sol <- uniform_names_based_on_id(names = ajker_r, ids = ajker_id_r)
 
 
+adoszam_df <- tibble(tib$Nyertes.ajánlattevő.adószáma..adóazonosító.jele.)
+print(head(adoszam_df))
+print("we good")
+adoszam_df$eu <- list(NA)
+adoszam_df$cegj <- list(NA)
+adoszam_df$hun <- list(NA)
+adoszam_df$split <- str_split(adoszam_df[[1]], pattern = "\\||,")
 
+for (row_n in 1:length(adoszam_df$split)) {
+  row <- adoszam_df$split[[row_n]]
+  for (id in row) {
+    print(id)
+    if (str_starts(id, pattern = "[:upper:]{2}\\d+")) {
+      if (is.na(adoszam_df$eu[row_n])) {
+        adoszam_df$eu[[row_n]] <- id
+      } else {
+        adoszam_df$eu[[row_n]] <- c(adoszam_df$eu[[row_n]], id)
+      }
+    }
+    if (str_starts(id, pattern = "[:alpha:]*\\.*\\d{2}-")) {
+      if (is.na(adoszam_df$cegj[row_n])) {
+        adoszam_df$cegj[[row_n]] <- id
+      } else {
+        adoszam_df$cegj[[row_n]] <- c(adoszam_df$cegj[[row_n]], id)
+      }
+    }
+    if (str_starts(id, pattern = "(\\d{8}-)|\\d{11}")) {
+      if (is.na(adoszam_df$hun[row_n])) {
+        adoszam_df$hun[[row_n]] <- id
+      } else {
+        adoszam_df$hun[[row_n]] <- c(adoszam_df$hun[[row_n]], id)
+      }
+    }
+  }
+}
 
+save(adoszam_df, file = "ado1.Rdata")
+load(file = "ado1.Rdata")
+adoszam_excel <- adoszam_df
+adoszam_excel <- hoist(adoszam_excel, hun, ado_hu_1 = 1, ado_hu_2 = 2)
+adoszam_excel <- hoist(adoszam_excel, eu, ado_eu_1 = 1, ado_eu_2 = 2)
+adoszam_excel$hun_other <- lapply(adoszam_excel$hun, function(x) {ifelse(is.logical(x), "", paste(x, collapse="|"))}) |> unlist()
+adoszam_excel$eu_other <- lapply(adoszam_excel$hun, function(x) {ifelse(is.logical(x), "", paste(x, collapse="|"))}) |> unlist()
+adoszam_excel$cegj <- lapply(adoszam_excel$cegj, function(x) {ifelse(is.logical(x), "", paste(x, collapse="|"))}) |> unlist()
+# drop unneccessary cols
 
-
-
+adoszam_excel <- select(adoszam_excel, -c("hun", "split", "tib$Nyertes.ajánlattevő.adószáma..adóazonosító.jele.", "eu"))
+write_xlsx(adoszam_excel, path = "adoszam.xlsx")

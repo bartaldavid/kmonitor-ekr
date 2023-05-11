@@ -55,31 +55,42 @@ print(solution)
 
 
 adoszam_ex <- c("13588098241,HU13588098",
-                "CZ27865410",
+                "CZ27865410", "10620386242,HUOCCSZ.01-09-990715",
                 "12070907243,HU12070907,01-09-462762|10240616242,HU 10240616|11961583241,HU11961583")
 
 adoszam_df <- data.frame(adoszam_ex)
-adoszam_df$eu <- NA
-adoszam_df$cegj <- NA
+adoszam_df$eu <- list(NA)
+adoszam_df$cegj <- list(NA)
 adoszam_df$hun <- list(NA)
 adoszam_df$split <- str_split(adoszam_df$adoszam_ex, pattern = "\\||,")
 
 for (row_n in 1:length(adoszam_df$split)) {
   row <- adoszam_df$split[[row_n]]
   for (id in row) {
-    if (str_starts(id, pattern = "[:upper:]{2}")) {
+    if (str_starts(id, pattern = "[:upper:]{2}\\d+")) {
       if (is.na(adoszam_df$eu[row_n])) {
-        adoszam_df$eu[row_n] <- id
+        adoszam_df$eu[[row_n]] <- id
       } else {
-        
-      adoszam_df$eu[row_n] <- c(adoszam_df$eu[row_n], id)
+        adoszam_df$eu[[row_n]] <- c(adoszam_df$eu[[row_n]], id)
       }
     }
-    if (str_starts(id, pattern = "\\d{2}-")) {
-      adoszam_df$cegj[row_n] <- id
+    if (str_starts(id, pattern = "[:alpha:]*\\.*\\d{2}-")) {
+      if (is.na(adoszam_df$cegj[row_n])) {
+        adoszam_df$cegj[[row_n]] <- id
+      } else {
+        adoszam_df$cegj[[row_n]] <- c(adoszam_df$cegj[[row_n]], id)
+      }
     }
     if (str_starts(id, pattern = "(\\d{8}-)|\\d{11}")) {
-      adoszam_df$hun[row_n] <- id
+      if (is.na(adoszam_df$hun[row_n])) {
+        adoszam_df$hun[[row_n]] <- id
+      } else {
+        adoszam_df$hun[[row_n]] <- c(adoszam_df$hun[[row_n]], id)
+      }
     }
   }
 }
+
+l <- list(1, c(1,3), c(1,3,5))
+lengths(l)
+map_dfr(l, ~as.data.frame(t(.)))
